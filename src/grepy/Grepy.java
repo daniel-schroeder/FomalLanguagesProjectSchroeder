@@ -74,6 +74,9 @@ public class Grepy {
 				currentState = previousState;
 			} else if (regex.substring(i, i+1).equals("*")) {
 				if (theAlphabet.contains(regex.substring(i-1, i))) {
+					currentState = previousState;
+					transitionFunction.remove(transitionFunction.size() - 1);
+					states.remove(states.size() - 1);
 					Transition t1 = new Transition(currentState, regex.substring(i-1, i), currentState);
 					transitionFunction.add(t1);
 					if (!states.contains(currentState)) {
@@ -117,6 +120,62 @@ public class Grepy {
 		
 		acceptingStates.add(currentState);
 		
-		return new NFA(states, theAlphabet, transitionFunction, initialState, acceptingStates);
+		return minimize(new NFA(states, theAlphabet, transitionFunction, initialState, acceptingStates));
+	}
+	
+	public static NFA minimize(NFA theNFA) {
+		ArrayList<State> theStates = theNFA.states;
+		ArrayList<String> theAlphabet = theNFA.alphabet;
+		ArrayList<Transition> theTransitionFunction = theNFA.transitionFunction;
+		State theInitialState = theNFA.initialState;
+		ArrayList<State> theAcceptingStates = theNFA.acceptingStates;
+		NFA minimizedNFA = new NFA(theStates, theAlphabet, theTransitionFunction, theInitialState, theAcceptingStates);
+		
+		for (int i = 0; i < theNFA.transitionFunction.size(); i++) {
+			State nextState = new State("temp");
+			String nextSymbol = "-1";
+			if (theNFA.transitionFunction.get(i).symbol == ""
+					&& theNFA.transitionFunction.get(i + 1).symbol == ""
+					&& theNFA.transitionFunction.get(i + 2).symbol == ""
+					&& theNFA.transitionFunction.get(i + 3).symbol == "") {
+				State currentState = theNFA.transitionFunction.get(i).endState;
+				if(theNFA.transitionFunction.get(i).startState.equals(theNFA.initialState)) {
+					minimizedNFA.initialState = currentState;
+				}
+				if (theNFA.transitionFunction.size() > i + 4) {
+					nextState = theNFA.transitionFunction.get(i + 4).endState;
+					nextSymbol = theNFA.transitionFunction.get(i + 4).symbol;
+					minimizedNFA.transitionFunction.remove(i+4);
+				}
+				minimizedNFA.transitionFunction.remove(i);
+				minimizedNFA.transitionFunction.remove(i);
+				minimizedNFA.transitionFunction.remove(i);
+				minimizedNFA.transitionFunction.remove(i);
+				for (int j = 0; j < theNFA.transitionFunction.size(); j++) {
+					if (theNFA.transitionFunction.get(j).startState.equals(currentState)
+							&& !theNFA.transitionFunction.get(j).endState.equals(currentState)) {
+						minimizedNFA.transitionFunction.remove(j);
+						minimizedNFA.transitionFunction.add(new Transition(currentState, theNFA.transitionFunction.get(j).symbol, currentState));
+						j--;
+					}
+				}
+				if (!nextSymbol.equals("-1") && !nextState.name.equals("temp")) {
+					minimizedNFA.transitionFunction.add(new Transition (currentState, nextSymbol, nextState));
+				}
+			}
+		}
+		
+		minimizedNFA.states.removeAll(minimizedNFA.states);
+		minimizedNFA.states.add(minimizedNFA.initialState);
+		for (int i = 0; i < minimizedNFA.transitionFunction.size(); i++) {
+			if (!minimizedNFA.states.contains(minimizedNFA.transitionFunction.get(i).startState)) {
+				minimizedNFA.states.add(minimizedNFA.transitionFunction.get(i).startState);
+			}
+			if (!minimizedNFA.states.contains(minimizedNFA.transitionFunction.get(i).endState)) {
+				minimizedNFA.states.add(minimizedNFA.transitionFunction.get(i).endState);
+			}
+		}
+		
+		return minimizedNFA;
 	}
 }

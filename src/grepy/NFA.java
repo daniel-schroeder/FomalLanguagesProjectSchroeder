@@ -43,6 +43,18 @@ public class NFA {
 	
 	public ArrayList<State> getAllStates() {
 		ArrayList<State> allStates = new ArrayList<State>();
+		ArrayList<State> potentialMoves = new ArrayList<State>();
+		State currentState = initialState;
+		
+		for (int j = 0; j < alphabet.size(); j++) {
+			for (int i = 0; i < transitionFunction.size(); i++) {
+				if (transitionFunction.get(i).symbol == alphabet.get(j)
+						&& transitionFunction.get(i).startState.equals(currentState)) {
+					potentialMoves.add(transitionFunction.get(i).endState);
+				}
+			}
+			
+		}
 		
 		return allStates;
 	}
