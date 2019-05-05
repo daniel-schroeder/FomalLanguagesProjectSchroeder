@@ -57,13 +57,14 @@ public class Grepy {
 	public static NFA createNFA(String regex, ArrayList<String> theAlphabet) {
 		ArrayList<State> states = new ArrayList<State>();
 		ArrayList<Transition> transitionFunction = new ArrayList<Transition>();
-		State initialState = new State();
+		State initialState = new State("s0");
 		State currentState = initialState;
 		State previousState = initialState;
 		State branchState = currentState;
-		State nextState = new State();
+		State nextState = new State("s1");
 		states.add(initialState);
 		ArrayList<State> acceptingStates = new ArrayList<State>();
+		int sCounter = 2;
 		
 		for (int i = 0; i < regex.length(); i++) {
 			if (regex.substring(i, i+1).equals("(")) {
@@ -79,7 +80,8 @@ public class Grepy {
 						states.add(currentState);
 					}
 				} else if (regex.substring(i-1, i).equals(")")) {
-					State s1 = new State();
+					State s1 = new State("s" + sCounter);
+					sCounter++;
 					Transition t1 = new Transition(s1, "" , branchState);
 					Transition t2 = new Transition(nextState, "" , branchState);
 					Transition t3 = new Transition(s1, "" , nextState);
@@ -97,13 +99,15 @@ public class Grepy {
 					
 					previousState = currentState;
 					currentState = nextState;
-					nextState = new State();
+					nextState = new State("s" + sCounter);
+					sCounter++;
 				}
 			} else if (theAlphabet.contains(regex.substring(i, i+1))) {
 				Transition t1 = new Transition(currentState, regex.substring(i, i+1), nextState);
 				previousState = currentState;
 				currentState = nextState;
-				nextState = new State();
+				nextState = new State("s" + sCounter);
+				sCounter++;
 				transitionFunction.add(t1);
 				if (!states.contains(currentState)) {
 					states.add(currentState);

@@ -12,6 +12,10 @@ public class Transition {
 	}
 	
 	public String toString() {
-		return "[" + startState.toString() + ", " + symbol + ", " + endState.toString() + "]";
+		if (endState != null) {
+			return "[" + startState.toString() + ", " + symbol + ", " + endState.toString() + "]";
+		} else {
+			return "[" + startState.toString() + ", " + symbol + ", null]";
+		}
 	}
 }
