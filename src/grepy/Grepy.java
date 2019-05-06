@@ -124,7 +124,7 @@ public class Grepy {
 	}
 	
 	public static NFA minimize(NFA theNFA) {
-		ArrayList<State> theStates = theNFA.states;
+		ArrayList<State> theStates = new ArrayList<State>();
 		ArrayList<String> theAlphabet = theNFA.alphabet;
 		ArrayList<Transition> theTransitionFunction = theNFA.transitionFunction;
 		State theInitialState = theNFA.initialState;
@@ -151,11 +151,11 @@ public class Grepy {
 				minimizedNFA.transitionFunction.remove(i);
 				minimizedNFA.transitionFunction.remove(i);
 				minimizedNFA.transitionFunction.remove(i);
-				for (int j = 0; j < theNFA.transitionFunction.size(); j++) {
-					if (theNFA.transitionFunction.get(j).startState.equals(currentState)
-							&& !theNFA.transitionFunction.get(j).endState.equals(currentState)) {
+				for (int j = 0; j < minimizedNFA.transitionFunction.size(); j++) {
+					if (minimizedNFA.transitionFunction.get(j).startState.equals(currentState)
+							&& !minimizedNFA.transitionFunction.get(j).endState.equals(currentState)) {
+						minimizedNFA.transitionFunction.add(new Transition(currentState, minimizedNFA.transitionFunction.get(j).symbol, currentState));
 						minimizedNFA.transitionFunction.remove(j);
-						minimizedNFA.transitionFunction.add(new Transition(currentState, theNFA.transitionFunction.get(j).symbol, currentState));
 						j--;
 					}
 				}

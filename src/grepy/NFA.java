@@ -36,26 +36,59 @@ public class NFA {
 			}
 		}
 		
-		theStates.addAll(getAllStates());
-		
-		return new DFA(theStates, theAlphabet, theTransitionFunction, theInitialState, theAcceptingStates);
-	}
-	
-	public ArrayList<State> getAllStates() {
-		ArrayList<State> allStates = new ArrayList<State>();
-		ArrayList<State> potentialMoves = new ArrayList<State>();
-		State currentState = initialState;
-		
-		for (int j = 0; j < alphabet.size(); j++) {
-			for (int i = 0; i < transitionFunction.size(); i++) {
-				if (transitionFunction.get(i).symbol == alphabet.get(j)
-						&& transitionFunction.get(i).startState.equals(currentState)) {
-					potentialMoves.add(transitionFunction.get(i).endState);
+		ArrayList<State> potentialStates = new ArrayList<State>();
+		String nextName = "";
+		boolean alreadyThere = false;
+		for (int i = 0; i < theStates.size(); i++) {
+			if (theStates.get(i).name.length() > 2) {
+				for (int j = 0; j < theAlphabet.size(); j++) {
+					for (int n = 0; n < theStates.get(i).name.length(); n += 2) {
+						for (int k = 0; k < nfa.transitionFunction.size(); k ++) {
+							if (nfa.transitionFunction.get(k).startState.name.equals(theStates.get(i).name.substring(n, n+2))
+									&& theAlphabet.get(j).equals(nfa.transitionFunction.get(k).symbol)) {
+								potentialStates.add(nfa.transitionFunction.get(k).endState);
+							}
+						}
+					}
+					for (int l = 0; l < potentialStates.size(); l++) {
+						nextName += potentialStates.get(i).name;
+					}
+					theStates.add(new State(nextName));
+					nextName = "";
+				}
+			} else {
+				for (int j = 0; j < theAlphabet.size(); j++) {
+						for (int k = 0; k < nfa.transitionFunction.size(); k ++) {
+							if (nfa.transitionFunction.get(k).startState.name.equals(theStates.get(i).name)
+									&& theAlphabet.get(j).equals(nfa.transitionFunction.get(k).symbol)) {
+								potentialStates.add(nfa.transitionFunction.get(k).endState);
+							}
+						}
+					for (int l = 0; l < potentialStates.size(); l++) {
+						nextName += potentialStates.get(i).name;
+					}
+					for (int l = 0; l < theStates.size(); l++) {
+						if (theStates.get(i).name == nextName) {
+							alreadyThere = true;
+						}
+					}
+					if (!alreadyThere) {
+						theStates.add(new State(nextName));
+					}
+					nextName = "";
 				}
 			}
-			
 		}
 		
-		return allStates;
+		for (int i = 0; i < theStates.size(); i++) {
+			for (int j = 0; j < nfa.acceptingStates.size(); j ++) {
+				if (theStates.get(i).name.indexOf(nfa.acceptingStates.get(j).name) != -1) {
+					theAcceptingStates.add(theStates.get(i));
+				}
+			}
+		}
+		
+		return new DFA(theStates, theAlphabet, theTransitionFunction, theInitialState, theAcceptingStates);
+		//return new DFA(nfa.states, nfa.alphabet, nfa.transitionFunction, nfa.initialState, nfa.acceptingStates);
 	}
 }
