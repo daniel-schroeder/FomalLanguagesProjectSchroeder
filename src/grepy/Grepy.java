@@ -180,6 +180,7 @@ public class Grepy {
 		ArrayList<State> theAcceptingStates = theNFA.acceptingStates;
 		NFA minimizedNFA = new NFA(theStates, theAlphabet, theTransitionFunction, theInitialState, theAcceptingStates);
 		
+		//basically checks for a complicated loop involving "" transitions and changes them to a more basic loop
 		for (int i = 0; i < theNFA.transitionFunction.size(); i++) {
 			State nextState = new State("temp");
 			String nextSymbol = "-1";
