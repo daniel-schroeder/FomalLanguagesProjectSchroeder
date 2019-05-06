@@ -15,32 +15,19 @@ import java.util.ArrayList;
 
 public class Grepy {
 	public static void main (String[] args) throws IOException {
-		/*State s1 = new State("s1");
-		State s2 = new State("s2");
-		State s3 = new State("s3");
-		ArrayList<State> states = new ArrayList<State>();
-		states.add(s1);
-		states.add(s2);
-		states.add(s3);
-		Transition t1 = new Transition(s1, "a", s2);
-		Transition t2 = new Transition(s1, "b", s1);
-		Transition t3 = new Transition(s2, "a", s2);
-		Transition t4 = new Transition(s2, "b", s3);
-		Transition t5 = new Transition(s3, "a", s3);
-		Transition t6 = new Transition(s3, "b", s3);
-		ArrayList<Transition> transitionFunction = new ArrayList<Transition>();
-		transitionFunction.add(t1);
-		transitionFunction.add(t2);
-		transitionFunction.add(t3);
-		transitionFunction.add(t4);
-		transitionFunction.add(t5);
-		transitionFunction.add(t6);
-		ArrayList<State> acceptingStates = new ArrayList<State>();
-		acceptingStates.add(s3);*/
+		//paths for the dot outputs
 		Path nfaFilePath = Paths.get("/temp");
 		Path dfaFilePath = Paths.get("/temp");
+		
+		//lines to be read from the input file
 		ArrayList<String> lines = new ArrayList<String>();
+		
+		//the regex to be transformed into a dfa
 		String regex;
+		
+		//this string of if-else clauses checks to see if there has been an output file given
+		//and if so is it nfa or dfa. then assigns the paths to corresponding variables,
+		//the regex to its variable, and the lines to its variable
 		if (!args[0].equals("-n") && !args[0].equals("-d")) {
 			regex = args[0];
 			lines = (ArrayList<String>) Files.readAllLines(Paths.get(args[1]), StandardCharsets.UTF_8);
@@ -58,19 +45,33 @@ public class Grepy {
 			dfaFilePath = Paths.get(args[3]);
 			lines = (ArrayList<String>) Files.readAllLines(Paths.get(args[5]), StandardCharsets.UTF_8);
 		}
+		
+		//determines the alphabet for the entire input file at once
 		ArrayList<String> alphabet = new ArrayList<String>();
 		for (int j = 0; j < lines.size(); j++) {
 			for (int i = 0; i < lines.get(j).length(); i++) {
+				//checks to make sure there are no duplicates before adding a new symbol
 				if (alphabet.contains(lines.get(j).substring(i,i+1)) == false) {
 					alphabet.add(lines.get(j).substring(i,i+1));
 				}
 			}
 		}
+		
+		//creates the NFA using the regex, and the alphabet. Then if nfaFilePath has been properly initialized,
+		//creates a dot language file at the specified path 
 		NFA a = createNFA(regex, alphabet, nfaFilePath);
+		
+		//Creates a DFA from the NFA then if dfaFilePath has been properly initialized,
+		//creates a dot language file at the specified path 
 		DFA b = a.createDFA(a, dfaFilePath);
-		b.toString();
+		
+		//evaluate using DFA.evaluate(DFA, String) for each line in the ArrayList lines. 
 		for (int i = 0; i < lines.size(); i++) {
-			System.out.println(b.evaluate(b, lines.get(i), b.transitionFunction));
+			String temp = b.evaluate(b, lines.get(i));
+			//Only print out lines that are accepted
+			if (!temp.equals("Not Accepted")) {
+				System.out.println(temp);
+			}
 		}
 	}
 	
@@ -87,13 +88,18 @@ public class Grepy {
 		int sCounter = 2;
 		String content = "digraph nfa { \n";
 		
+		//goes through each symbol of the regex and decides what to do
 		for (int i = 0; i < regex.length(); i++) {
 			if (regex.substring(i, i+1).equals("(")) {
+				//set up a branch to go back to at the end of the parenthesis
 				branchState = currentState;
 			} else if (regex.substring(i, i+1).equals("+")) {
+				//go back because its an OR
 				nextState = currentState;
 				currentState = previousState;
 			} else if (regex.substring(i, i+1).equals("*")) {
+				//just one symbol repeated
+				//set up a transition on itself
 				if (theAlphabet.contains(regex.substring(i-1, i))) {
 					currentState = previousState;
 					transitionFunction.remove(transitionFunction.size() - 1);
@@ -104,6 +110,8 @@ public class Grepy {
 						states.add(currentState);
 					}
 				} else if (regex.substring(i-1, i).equals(")")) {
+					//multiple things repeated.
+					//set up a different kind of loop
 					State s1 = new State("s" + sCounter);
 					sCounter++;
 					Transition t1 = new Transition(s1, "" , branchState);
@@ -127,6 +135,7 @@ public class Grepy {
 					sCounter++;
 				}
 			} else if (theAlphabet.contains(regex.substring(i, i+1))) {
+				//add a transition to the transitionfunction
 				Transition t1 = new Transition(currentState, regex.substring(i, i+1), nextState);
 				previousState = currentState;
 				currentState = nextState;
@@ -139,15 +148,22 @@ public class Grepy {
 			}
 		}
 		
+		//the final state is accepting
 		acceptingStates.add(currentState);
 		
+		//this should minimize the NFA
 		NFA nfa = minimize(new NFA(states, theAlphabet, transitionFunction, initialState, acceptingStates));
 		
+		//generates the dot language using the transition state
 		for (int i = 0; i < transitionFunction.size(); i ++) {
-			content += transitionFunction.get(i).startState.name + " -> " + transitionFunction.get(i).endState.name 
+			content += "	" + transitionFunction.get(i).startState.name + " -> " + transitionFunction.get(i).endState.name 
 					+ " [label=" + transitionFunction.get(i).symbol + "]\n";
 		}
+		for (int i = 0; i < acceptingStates.size(); i++) {
+			content += "	" + acceptingStates.get(i).name + " [peripheries=2]\n";
+		}
 		content += "}";
+		//writes to the file specified. /temp is a temp path that indicates no specified path
 		if (!(nfaFile.compareTo(Paths.get("/temp")) == 0)) {
 			Files.deleteIfExists(nfaFile);
 			Files.write(nfaFile, content.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE);

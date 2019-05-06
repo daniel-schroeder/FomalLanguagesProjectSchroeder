@@ -3,6 +3,7 @@ package grepy;
 import java.util.ArrayList;
 
 public class DFA {
+	//the 5 tuple of a dfa is represented with these properties of the DFA class
 	public ArrayList<State> states = new ArrayList<State>();
 	public ArrayList<String> alphabet = new ArrayList<String>();
 	public ArrayList<Transition> transitionFunction = new ArrayList<Transition>();
@@ -18,14 +19,17 @@ public class DFA {
 		acceptingStates = theAcceptingStates;
 	}
 	
-	public String evaluate(DFA theDFA, String theString, ArrayList<Transition> theTransition) {
+	//Goes through each symbol of the given string and follows the transition path given by the dfa.
+	//If after the last symbol os read, the machine is in an accepting state, accept
+	//otherwise reject
+	public String evaluate(DFA theDFA, String theString) {
 		State currentState = theDFA.initialState;
 		for (int i = 0; i < theString.length(); i++) {
 			String currentSymbol = theString.substring(i, i+1);
-			for (int j = 0; j < theTransition.size(); j++) {
-				if (theTransition.get(j).startState.equals(currentState)) {
-					if (theTransition.get(j).symbol.equals(currentSymbol)) {
-						currentState = theTransition.get(j).endState;
+			for (int j = 0; j < theDFA.transitionFunction.size(); j++) {
+				if (theDFA.transitionFunction.get(j).startState.equals(currentState)) {
+					if (theDFA.transitionFunction.get(j).symbol.equals(currentSymbol)) {
+						currentState = theDFA.transitionFunction.get(j).endState;
 						break;
 					}
 				}
@@ -34,9 +38,10 @@ public class DFA {
 		if (theDFA.acceptingStates.contains(currentState)) {
 			return theString;
 		}
-		return "False";
+		return "Not Accepted";
 	}
 	
+	//Print out the DFA 5-tuple in an organized fashion
 	public String toString() {
 		System.out.print("States: ");
 		for (int i = 0; i < this.states.size(); i++) {
