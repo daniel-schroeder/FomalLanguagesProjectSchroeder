@@ -67,12 +67,28 @@ public class NFA {
 							index = l;
 						}
 					}
-					if (alreadyThere) {
-						theTransitionFunction.add(new Transition (theStates.get(i), theAlphabet.get(j), theStates.get(index)));
-					} else {
+					int errorIndex = -1;
+					boolean errorThere = false;
+					if (nextName.equals("")) {
+						State nextState = new State("errorState");
+						for (int l = 0; l < theStates.size(); l++) {
+							if (theStates.get(l).name.equals("errorState")) {
+								errorThere = true;
+							}
+						}
+						if (!errorThere) {
+							theStates.add(0, nextState);
+							errorIndex = 0;
+						}
+					}
+					if (!nextName.equals("") && !alreadyThere) {
 						State nextState = new State(nextName);
 						theStates.add(nextState);
 						theTransitionFunction.add(new Transition (theStates.get(i), theAlphabet.get(j), nextState));
+					} else if (alreadyThere) {
+						theTransitionFunction.add(new Transition (theStates.get(i), theAlphabet.get(j), theStates.get(index)));
+					} else if (errorIndex != -1){
+						theTransitionFunction.add(new Transition (theStates.get(i), theAlphabet.get(j), theStates.get(errorIndex)));
 					}
 					nextName = "";
 					alreadyThere = false;
@@ -89,17 +105,35 @@ public class NFA {
 					for (int l = 0; l < potentialStates.size(); l++) {
 						nextName += potentialStates.get(l).name;
 					}
+					int index = -1;
 					for (int l = 0; l < theStates.size(); l++) {
 						if (theStates.get(l).name.equals(nextName)) {
 							alreadyThere = true;
+							index = l;
 						}
 					}
-					if (alreadyThere) {
-						theTransitionFunction.add(new Transition (theStates.get(i), theAlphabet.get(j), theStates.get(i)));
-					} else {
+					int errorIndex = -1;
+					boolean errorThere = false;
+					if (nextName.equals("")) {
+						State nextState = new State("errorState");
+						for (int l = 0; l < theStates.size(); l++) {
+							if (theStates.get(l).name.equals("errorState")) {
+								errorThere = true;
+							}
+						}
+						if (!errorThere) {
+							theStates.add(nextState);
+							errorIndex = theStates.indexOf(nextState);
+						}
+					}
+					if (!nextName.equals("") && !alreadyThere) {
 						State nextState = new State(nextName);
 						theStates.add(nextState);
 						theTransitionFunction.add(new Transition (theStates.get(i), theAlphabet.get(j), nextState));
+					} else if (alreadyThere) {
+						theTransitionFunction.add(new Transition (theStates.get(i), theAlphabet.get(j), theStates.get(index)));
+					} else if (errorIndex != -1){
+						theTransitionFunction.add(new Transition (theStates.get(i), theAlphabet.get(j), theStates.get(errorIndex)));
 					}
 					nextName = "";
 					alreadyThere = false;
@@ -112,6 +146,30 @@ public class NFA {
 			for (int j = 0; j < nfa.acceptingStates.size(); j ++) {
 				if (theStates.get(i).name.indexOf(nfa.acceptingStates.get(j).name) != -1) {
 					theAcceptingStates.add(theStates.get(i));
+				}
+			}
+		}
+		int errorIndex = -1;
+		for (int j = 0; j < theStates.size(); j++) {
+			if (theStates.get(j).name.equals("errorState")) {
+				for (int i = 0; i < theAlphabet.size(); i++) {
+					errorIndex = j;
+					theTransitionFunction.add(new Transition (theStates.get(j), theAlphabet.get(i), theStates.get(j)));
+				}
+			}
+		}
+		boolean exists;
+		for (int j = 0; j < theStates.size(); j++) {
+			for (int i = 0; i < theAlphabet.size(); i++) {
+				exists = false;
+				for (int n = 0; n < theTransitionFunction.size(); n++) {
+					if (theTransitionFunction.get(n).startState.name.equals(theStates.get(j).name)
+							&& theTransitionFunction.get(n).symbol.equals(theAlphabet.get(i))) {
+						exists = true;
+					}
+				}
+				if (!exists) {
+					theTransitionFunction.add(new Transition(theStates.get(j), theAlphabet.get(i), theStates.get(errorIndex)));
 				}
 			}
 		}

@@ -26,6 +26,7 @@ public class DFA {
 				if (theTransition.get(j).startState.equals(currentState)) {
 					if (theTransition.get(j).symbol.equals(currentSymbol)) {
 						currentState = theTransition.get(j).endState;
+						break;
 					}
 				}
 			}

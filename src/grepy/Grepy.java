@@ -69,9 +69,9 @@ public class Grepy {
 		NFA a = createNFA(regex, alphabet, nfaFilePath);
 		DFA b = a.createDFA(a, dfaFilePath);
 		b.toString();
-		/*for (int i = 0; i < lines.size(); i++) {
+		for (int i = 0; i < lines.size(); i++) {
 			System.out.println(b.evaluate(b, lines.get(i), b.transitionFunction));
-		}*/
+		}
 	}
 	
 	public static NFA createNFA(String regex, ArrayList<String> theAlphabet, Path nfaFile) throws IOException {
