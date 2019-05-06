@@ -8,7 +8,9 @@ import grepy.DFA;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 
 public class Grepy {
@@ -35,9 +37,27 @@ public class Grepy {
 		transitionFunction.add(t6);
 		ArrayList<State> acceptingStates = new ArrayList<State>();
 		acceptingStates.add(s3);*/
-		String regex = args[0];
+		Path nfaFilePath = Paths.get("/temp");
+		Path dfaFilePath = Paths.get("/temp");
 		ArrayList<String> lines = new ArrayList<String>();
-		lines = (ArrayList<String>) Files.readAllLines(Paths.get(args[1]), StandardCharsets.UTF_8);
+		String regex;
+		if (!args[0].equals("-n") && !args[0].equals("-d")) {
+			regex = args[0];
+			lines = (ArrayList<String>) Files.readAllLines(Paths.get(args[1]), StandardCharsets.UTF_8);
+		} else if (args[0].equals("-n") && !args[2].equals("-d")) {
+			regex = args[2];
+			lines = (ArrayList<String>) Files.readAllLines(Paths.get(args[3]), StandardCharsets.UTF_8);
+			nfaFilePath = Paths.get(args[1]);
+		} else if (args[0].equals("-d") && !args[2].equals("-n")) {
+			regex = args[2];
+			dfaFilePath = Paths.get(args[1]);
+			lines = (ArrayList<String>) Files.readAllLines(Paths.get(args[3]), StandardCharsets.UTF_8);
+		} else {
+			regex = args[4];
+			nfaFilePath = Paths.get(args[1]);
+			dfaFilePath = Paths.get(args[3]);
+			lines = (ArrayList<String>) Files.readAllLines(Paths.get(args[5]), StandardCharsets.UTF_8);
+		}
 		ArrayList<String> alphabet = new ArrayList<String>();
 		for (int j = 0; j < lines.size(); j++) {
 			for (int i = 0; i < lines.get(j).length(); i++) {
@@ -46,15 +66,15 @@ public class Grepy {
 				}
 			}
 		}
-		NFA a = createNFA(regex, alphabet);
-		DFA b = a.createDFA(a);
+		NFA a = createNFA(regex, alphabet, nfaFilePath);
+		DFA b = a.createDFA(a, dfaFilePath);
 		b.toString();
 		/*for (int i = 0; i < lines.size(); i++) {
 			System.out.println(b.evaluate(b, lines.get(i), b.transitionFunction));
 		}*/
 	}
 	
-	public static NFA createNFA(String regex, ArrayList<String> theAlphabet) {
+	public static NFA createNFA(String regex, ArrayList<String> theAlphabet, Path nfaFile) throws IOException {
 		ArrayList<State> states = new ArrayList<State>();
 		ArrayList<Transition> transitionFunction = new ArrayList<Transition>();
 		State initialState = new State("s0");
@@ -65,6 +85,7 @@ public class Grepy {
 		states.add(initialState);
 		ArrayList<State> acceptingStates = new ArrayList<State>();
 		int sCounter = 2;
+		String content = "digraph nfa { \n";
 		
 		for (int i = 0; i < regex.length(); i++) {
 			if (regex.substring(i, i+1).equals("(")) {
@@ -120,7 +141,19 @@ public class Grepy {
 		
 		acceptingStates.add(currentState);
 		
-		return minimize(new NFA(states, theAlphabet, transitionFunction, initialState, acceptingStates));
+		NFA nfa = minimize(new NFA(states, theAlphabet, transitionFunction, initialState, acceptingStates));
+		
+		for (int i = 0; i < transitionFunction.size(); i ++) {
+			content += transitionFunction.get(i).startState.name + " -> " + transitionFunction.get(i).endState.name 
+					+ " [label=" + transitionFunction.get(i).symbol + "]\n";
+		}
+		content += "}";
+		if (!(nfaFile.compareTo(Paths.get("/temp")) == 0)) {
+			Files.deleteIfExists(nfaFile);
+			Files.write(nfaFile, content.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE);
+		}
+		
+		return nfa;
 	}
 	
 	public static NFA minimize(NFA theNFA) {

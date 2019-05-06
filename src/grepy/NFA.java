@@ -1,5 +1,11 @@
 package grepy;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 
 public class NFA {
@@ -18,13 +24,14 @@ public class NFA {
 		acceptingStates = theAcceptingStates;
 	}
 	
-	public DFA createDFA(NFA nfa) {
+	public DFA createDFA(NFA nfa, Path dfaFile) throws IOException {
 		ArrayList<State> theStates = new ArrayList<State>();
 		ArrayList<Transition> theTransitionFunction = new ArrayList<Transition>();
 		State theInitialState = nfa.initialState;
 		theStates.add(theInitialState);
 		ArrayList<State> theAcceptingStates = new ArrayList<State>();
 		ArrayList<String> theAlphabet = nfa.alphabet;
+		String content = "digraph dfa { \n";
 		
 		for (int i = 0; i < nfa.transitionFunction.size(); i++) {
 			if (nfa.transitionFunction.get(i).startState.equals(theInitialState) &&
@@ -51,10 +58,25 @@ public class NFA {
 						}
 					}
 					for (int l = 0; l < potentialStates.size(); l++) {
-						nextName += potentialStates.get(i).name;
+						nextName += potentialStates.get(l).name;
 					}
-					theStates.add(new State(nextName));
+					int index = -1;
+					for (int l = 0; l < theStates.size(); l++) {
+						if (theStates.get(l).name.equals(nextName)) {
+							alreadyThere = true;
+							index = l;
+						}
+					}
+					if (alreadyThere) {
+						theTransitionFunction.add(new Transition (theStates.get(i), theAlphabet.get(j), theStates.get(index)));
+					} else {
+						State nextState = new State(nextName);
+						theStates.add(nextState);
+						theTransitionFunction.add(new Transition (theStates.get(i), theAlphabet.get(j), nextState));
+					}
 					nextName = "";
+					alreadyThere = false;
+					potentialStates.removeAll(potentialStates);
 				}
 			} else {
 				for (int j = 0; j < theAlphabet.size(); j++) {
@@ -65,17 +87,23 @@ public class NFA {
 							}
 						}
 					for (int l = 0; l < potentialStates.size(); l++) {
-						nextName += potentialStates.get(i).name;
+						nextName += potentialStates.get(l).name;
 					}
 					for (int l = 0; l < theStates.size(); l++) {
-						if (theStates.get(i).name == nextName) {
+						if (theStates.get(l).name.equals(nextName)) {
 							alreadyThere = true;
 						}
 					}
-					if (!alreadyThere) {
-						theStates.add(new State(nextName));
+					if (alreadyThere) {
+						theTransitionFunction.add(new Transition (theStates.get(i), theAlphabet.get(j), theStates.get(i)));
+					} else {
+						State nextState = new State(nextName);
+						theStates.add(nextState);
+						theTransitionFunction.add(new Transition (theStates.get(i), theAlphabet.get(j), nextState));
 					}
 					nextName = "";
+					alreadyThere = false;
+					potentialStates.removeAll(potentialStates);
 				}
 			}
 		}
@@ -88,7 +116,16 @@ public class NFA {
 			}
 		}
 		
+		for (int i = 0; i < theTransitionFunction.size(); i ++) {
+			content += theTransitionFunction.get(i).startState.name + " -> " + theTransitionFunction.get(i).endState.name 
+					+ " [label=" + theTransitionFunction.get(i).symbol + "]\n";
+		}
+		content += "}";
+		if (!(dfaFile.compareTo(Paths.get("/temp")) == 0)) {
+			Files.deleteIfExists(dfaFile);
+			Files.write(dfaFile, content.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE);
+		}
+		
 		return new DFA(theStates, theAlphabet, theTransitionFunction, theInitialState, theAcceptingStates);
-		//return new DFA(nfa.states, nfa.alphabet, nfa.transitionFunction, nfa.initialState, nfa.acceptingStates);
 	}
 }
